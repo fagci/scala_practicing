@@ -1,4 +1,4 @@
-import scala.util.Random
+import scala.util.{Random,Try}
 import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -6,7 +6,11 @@ import java.net.{Socket, InetSocketAddress}
 
 val r = new Random()
 
-val ranges:List[(Long, Long)] = List(
+def intIp() = r.between(0x01000000L, 0xe0000000L)
+
+def int2Ip(i:Long) = s"${i>>24&255}.${i>>16&255}.${i>>8&255}.${i&255}"
+
+val excludeRanges:List[(Long, Long)] = List(
   (0x0A000000, 0x0b000000), // 10.0.0.0 - 10.255.255.255
   (0x7F000000, 0x80000000), // 127.0.0.0 - 127.255.255.255
   (0x64400000, 0x64800000), // 100.64.0.0 - 100.127.255.255
@@ -23,37 +27,28 @@ val ranges:List[(Long, Long)] = List(
 )
 
 def notGlobal(intip:Long) =
-  ranges.exists((f,t) => f <= intip && intip < t)
+  excludeRanges.exists((f,t) => f <= intip && intip < t)
 
-def intIp():Long =
-  0x01000000 + r.nextLong(0xdeffffff)
-
-def int2Ip(i:Long) =
-  s"${i>>24&255}.${i>>16&255}.${i>>8&255}.${i&255}"
-
-def rand_ip():String =
-  val i = intIp()
-  if(notGlobal(i)) rand_ip() else int2Ip(i)
+def randIp():String =
+  val intip = intIp()
+  if(notGlobal(intip)) randIp() else int2Ip(intip)
 
 def check(ip:String):Boolean =
-  val s = new Socket()
   val addr = new InetSocketAddress(ip, 80)
-  try {
-    s.connect(addr, 750)
+  val s = new Socket()
+  Try{
+    s.connect(addr, 550)
     s.close()
-    true
-  } catch {
-    case _ => false
-  }
+  }.isSuccess
 
-def work(i:Long) = Future {
+def work = Future {
   Iterator
-    .continually(rand_ip())
+    .continually(randIp())
     .filter(check)
     .foreach(println)
 }
 
 @main def main() =
-  val tasks = (1L to 1024).map(work)
+  val tasks = List.fill(1024)(work)
   Await.result(Future.sequence(tasks), Duration.Inf)
   
