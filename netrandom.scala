@@ -57,6 +57,5 @@ object Netrandom {
   def main(args: Array[String]):Unit = {
     val tasks = List.fill(1024)(work)
     Await.result(Future.sequence(tasks), Duration.Inf)
-    Unit
   }
 }  
