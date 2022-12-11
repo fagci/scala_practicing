@@ -3,6 +3,9 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.net.{Socket, InetSocketAddress}
+import java.util.concurrent.Executors
+
+implicit val _:ExecutionContext = ExecutionContext.fromExecutorService(Executors.newWorkStealingPool(1024))
 
 val r = new Random()
 
