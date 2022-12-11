@@ -36,7 +36,7 @@ def randIp():String =
   if(notGlobal(intip)) randIp() else int2Ip(intip)
 
 def check(ip:String):Boolean =
-  val addr = new InetSocketAddress(ip, 80)
+  val addr = new InetSocketAddress(ip, 21)
   val s = new Socket()
   Try{
     s.connect(addr, 550)
